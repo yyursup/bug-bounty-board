@@ -6,9 +6,10 @@ Curated by [@CallMeCSZ](https://x.com/CallMeCSZ).
 
 ## How it works
 
-- `site/` is the static page served by GitHub Pages (`index.html` + `programs.json`).
+- `site/` is the static page (`index.html` + `programs.json`), served by Vercel (`vercel.json`) and GitHub Pages.
 - `scripts/fetch_bounties.py` pulls each platform's public program data and writes `site/programs.json`.
-- `.github/workflows/deploy.yml` runs the script every 6 hours, commits the new data and redeploys.
+- `.github/workflows/deploy.yml` runs the script every 6 hours and commits the new data. That push
+  makes Vercel redeploy, and the same workflow redeploys GitHub Pages.
   Run it by hand from the **Actions** tab with **Run workflow**.
 
 ## Run locally
