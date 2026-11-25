@@ -35,13 +35,16 @@ jobs:
         run: python3 scripts/fetch_bounties.py site/programs.json
 
       - name: Commit refreshed data
+        # Saving the data back is a convenience: a failure here must not block the deploy.
+        continue-on-error: true
         run: |
           if ! git diff --quiet -- site/programs.json; then
             git config user.name "bounty-board-bot"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add site/programs.json
             git commit -m "data: refresh programs.json"
-            git push
+            git pull --rebase -X theirs origin main
+            git push origin HEAD:main
           fi
 
       - uses: actions/configure-pages@v5
