@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live Bug Bounty Board</title>
+<meta name="description" content="Every live Web3 bug bounty from Immunefi, Cantina, Sherlock and HackenProof in one searchable board, with reward caps, requirements and links to the original scope.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<style>
+/* Plan: a researcher's ledger. Paper/ink neutrals, amber for money, muted semantic colors for severity and freshness.
+   Layout: sticky nav with brand + Follow, hero with KPI tiles, curator's picks strip, toolbar + filters, card grid / table, methodology, footer. */
+:root {
+  --bg: #f4f1ea; --surface: #fbfaf6; --line: #d9d4c7; --text: #1d1b16; --muted: #6b665a;
+  --accent: #9a5b00; --ok: #2f6b3a; --warn: #9a6a00; --crit: #a3362b; --chip: #ebe6d9;
+  --btn: #16141f; --btn-text: #ffffff;
+  --display: "Fraunces", Georgia, serif;
+  --body: "IBM Plex Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12140f; --surface: #1a1d16; --line: #353a2e; --text: #ece8dc; --muted: #a09a88;
+    --accent: #e8b35a; --ok: #8fd19e; --warn: #e8c46a; --crit: #f08a7e; --chip: #242820;
+    --btn: #f2efe6; --btn-text: #16141f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12140f; --surface: #1a1d16; --line: #353a2e; --text: #ece8dc; --muted: #a09a88;
+  --accent: #e8b35a; --ok: #8fd19e; --warn: #e8c46a; --crit: #f08a7e; --chip: #242820;
+  --btn: #f2efe6; --btn-text: #16141f; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+a { color: var(--accent); }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+
+nav.top { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.navin { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 60px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; text-decoration: none; color: var(--text); }
+.brand .mark { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; background: var(--accent); color: var(--bg); font-family: var(--mono); font-size: 13px; font-weight: 500; }
+.navlinks { display: flex; align-items: center; gap: 20px; font-size: 14px; }
+.navlinks a.lnk { color: var(--muted); text-decoration: none; }
+.navlinks a.lnk:hover { color: var(--text); }
+.follow { display: inline-flex; align-items: center; gap: 8px; background: var(--btn); color: var(--btn-text); padding: 8px 18px; border-radius: 999px; font-weight: 600; font-size: 14px; text-decoration: none; transition: transform .15s, opacity .15s; white-space: nowrap; }
+.follow:hover { opacity: .88; }
+.follow:active { transform: scale(.97); }
+.follow svg { width: 15px; height: 15px; fill: currentColor; }
+@media (max-width: 640px) { .navlinks a.lnk { display: none; } }
+
+header.hero { padding: 40px 0 28px; display: grid; gap: 14px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+h1 { font-family: var(--display); font-weight: 600; font-size: clamp(32px, 5vw, 48px); line-height: 1.08; margin: 0; text-wrap: balance; }
+.lede { color: var(--muted); max-width: 66ch; margin: 0; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-top: 10px; }
+.kpi { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 14px 16px; }
+.kpi b { display: block; font-family: var(--mono); font-size: 24px; font-weight: 500; color: var(--accent); font-variant-numeric: tabular-nums; }
+.kpi span { font-size: 13px; color: var(--muted); }
+
+h2.sec { font-family: var(--display); font-weight: 600; font-size: 24px; margin: 0; }
+.sechead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 28px 0 12px; }
+.sechead p { margin: 0; font-size: 13px; color: var(--muted); }
+.picks { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.pick { text-align: left; font: inherit; color: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 10px 12px; display: grid; gap: 2px; min-width: 0; }
+.pick:hover { border-color: var(--accent); }
+.pick b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pick .amt { font-family: var(--mono); color: var(--accent); font-size: 15px; }
+.pick small { color: var(--muted); font-size: 12px; }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 12px; }
+#programs { margin-top: 32px; padding-top: 8px; border-top: 1px solid var(--line); }
+.search, select { padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; }
+.search { flex: 1 1 260px; min-width: 0; }
+select {
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  padding-right: 40px; line-height: 1.5;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 20px) 55%, calc(100% - 15px) 55%;
+  background-size: 5px 5px; background-repeat: no-repeat;
+}
+select:hover { border-color: var(--muted); }
+select option { background: var(--surface); color: var(--text); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { background: var(--surface); color: var(--muted); border: 0; padding: 10px 14px; font: inherit; font-size: 14px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--chip); color: var(--text); font-weight: 600; }
+:is(.search, select, button, a, .card, tr):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chip { border: 1px solid var(--line); background: var(--chip); color: var(--text); border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.chip .n { font-family: var(--mono); opacity: .7; margin-left: 4px; }
+.divider { width: 1px; height: 22px; background: var(--line); margin: 0 4px; }
+.count { font-size: 13px; color: var(--muted); margin: 14px 0 16px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.linkbtn { background: none; border: 0; color: var(--accent); font: inherit; font-size: 13px; cursor: pointer; padding: 0; text-decoration: underline; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.card { display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); cursor: pointer; text-align: left; color: inherit; font: inherit; min-width: 0; position: relative; overflow: hidden; transition: border-color .15s, transform .15s; }
+.card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--tier, var(--line)); }
+.card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.card h3 { font-family: var(--display); font-size: 20px; font-weight: 600; margin: 0; line-height: 1.2; overflow-wrap: anywhere; }
+.org { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.plat { font-family: var(--mono); font-size: 12px; padding: 2px 8px; border-radius: 4px; background: var(--chip); color: var(--muted); }
+.star { color: var(--accent); font-size: 12px; font-weight: 600; margin-left: 6px; }
+.fresh { font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+.fresh::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.f-new { color: var(--ok); } .f-recent { color: var(--warn); } .f-stale, .f-none { color: var(--muted); }
+.max { font-family: var(--mono); font-size: 24px; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.max small { font-size: 12px; color: var(--muted); margin-left: 4px; }
+.bar { height: 5px; border-radius: 999px; background: var(--chip); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag { font-size: 12px; border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; color: var(--muted); }
+.tag.req { color: var(--text); }
+.more { display: flex; justify-content: center; margin: 22px 0 0; }
+.btn { border: 1px solid var(--accent); color: var(--accent); background: none; border-radius: 8px; padding: 9px 16px; font: inherit; font-size: 14px; text-decoration: none; cursor: pointer; }
+.btn.primary { background: var(--accent); color: var(--bg); }
+.btn.ghost { border-color: var(--line); color: var(--text); margin-left: auto; }
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; white-space: nowrap; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--chip); }
+tbody tr:last-child td { border-bottom: 0; }
+th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--accent); }
+
+dialog { width: min(680px, calc(100% - 32px)); max-height: calc(100% - 32px); border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--text); padding: 0; }
+dialog::backdrop { background: rgba(0,0,0,.55); }
+.dlg { padding: 24px; display: grid; gap: 16px; }
+.dlg h3 { font-family: var(--display); font-size: 28px; font-weight: 600; margin: 0; overflow-wrap: anywhere; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.fact { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.fact span { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.fact b { font-weight: 500; font-size: 14px; }
+.dlg table td, .dlg table th { white-space: normal; padding: 8px 6px; }
+.sev { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 4px; border: 1px solid currentColor; text-transform: capitalize; }
+.sev.critical { color: var(--crit); } .sev.high { color: var(--warn); } .sev.medium { color: var(--accent); } .sev.low, .sev.other, .sev.insight, .sev.none { color: var(--muted); }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.meta { font-size: 13px; color: var(--muted); }
+
+section.method { margin-top: 56px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
+section.method h2 { grid-column: 1 / -1; }
+.mcard { border-top: 2px solid var(--accent); padding-top: 12px; }
+.mcard h4 { margin: 0 0 6px; font-size: 15px; }
+.mcard p { margin: 0; font-size: 14px; color: var(--muted); }
+.srcs { display: grid; gap: 4px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+footer { margin-top: 56px; padding: 28px 0 40px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); }
+footer p { margin: 0; max-width: 70ch; }
+.empty { color: var(--muted); padding: 40px 0; text-align: center; grid-column: 1 / -1; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--btn); color: var(--btn-text); padding: 8px 16px; border-radius: 999px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.toast.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap navin">
+    <a class="brand" href="#top"><span class="mark">BB</span>Bounty Board</a>
+    <div class="navlinks">
+      <a class="lnk" href="#programs">Programs</a>
+      <a class="lnk" href="#method">Methodology</a>
+      <a class="follow" href="https://x.com/CallMeCSZ" target="_blank" rel="noopener noreferrer" aria-label="Follow @CallMeCSZ on X">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        Follow
+      </a>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap" id="top">
+  <header class="hero">
+    <div class="eyebrow"><span class="pulse" aria-hidden="true"></span><span>Snapshot · Synced from platform data <span id="snap">…</span></span></div>
+    <h1>Every live Web3 bug bounty, in one place</h1>
+    <p class="lede">Live programs from Immunefi, Cantina, Sherlock and HackenProof, pulled straight from each platform's own data. Search, filter by reward and requirements, then open the original program to read the full scope.</p>
+    <div class="kpis">
+      <div class="kpi"><b id="kPrograms">—</b><span>Live programs</span></div>
+      <div class="kpi"><b id="kPlatforms">—</b><span>Platforms tracked</span></div>
+      <div class="kpi"><b id="kMillion">—</b><span>Programs paying $1M+</span></div>
+      <div class="kpi"><b id="kTop">—</b><span>Largest single cap</span></div>
+    </div>
+  </header>
+
+  <div class="sechead"><h2 class="sec">Curator's picks</h2><p>Programs I'm hunting right now</p></div>
+  <div class="picks" id="picks"></div>
+
+  <section id="programs">
+    <div class="sechead"><h2 class="sec">All live programs</h2><p>Updated from each platform's data</p></div>
+    <div class="toolbar">
+      <input class="search" id="q" type="search" placeholder="Search project, company, chain or language…" aria-label="Search programs">
+      <select id="minMax" aria-label="Minimum max reward">
+        <option value="0">Any reward</option>
+        <option value="10000">$10K+</option>
+        <option value="100000">$100K+</option>
+        <option value="1000000">$1M+</option>
+      </select>
+      <select id="sort" aria-label="Sort programs">
+        <option value="max">Max reward: high → low</option>
+        <option value="new">Newest launches</option>
+        <option value="updated">Recently updated</option>
+        <option value="name">Name A → Z</option>
+      </select>
+      <div class="seg" role="group" aria-label="View">
+        <button type="button" id="vGrid" aria-pressed="true">Cards</button>
+        <button type="button" id="vTable" aria-pressed="false">Table</button>
+      </div>
+    </div>
+    <div class="filters">
+      <div class="filters" id="platChips" role="group" aria-label="Filter by platform"></div>
+      <span class="divider" aria-hidden="true"></span>
+      <button class="chip" type="button" id="fNoKyc" aria-pressed="false">No KYC</button>
+      <button class="chip" type="button" id="fNoFee" aria-pressed="false">No submission fee</button>
+      <button class="chip" type="button" id="fFeat" aria-pressed="false">★ Picks only</button>
+    </div>
+    <div class="count"><span id="count" aria-live="polite">Loading programs…</span><button class="linkbtn" type="button" id="reset">Clear filters</button></div>
+    <div id="results"></div>
+    <div class="more" id="more"></div>
+  </section>
+
+  <section class="method" id="method">
+    <h2 class="sec">Methodology</h2>
+    <div class="mcard"><h4>Source of truth</h4><p>Each program comes from the platform's own public data feed, the same data their websites show. Only permanent bug bounties are listed; audit contests and attackathons are left out.</p></div>
+    <div class="mcard"><h4>Max is a ceiling</h4><p>The headline number is the cap for the top severity. Real payouts depend on impact, funds at risk and each program's rules. Token amounts are shown as the program states them.</p></div>
+    <div class="mcard"><h4>Freshness</h4><p><span style="color:var(--ok)">●</span> program updated within 14 days, <span style="color:var(--warn)">●</span> within 90 days, <span style="color:var(--muted)">●</span> older. Cantina doesn't publish an update date, so its cards show the launch date.</p></div>
+    <div class="mcard"><h4>Last sync</h4><div class="srcs" id="srcs"></div></div>
+  </section>
+
+  <footer>
+    <p>Curated by <a href="https://x.com/CallMeCSZ" target="_blank" rel="noopener noreferrer">@CallMeCSZ</a>. Independent project, not affiliated with or endorsed by any platform listed. Always read the live scope and rules before testing. Missing a program? Send a DM on X.</p>
+    <a class="follow" href="https://x.com/CallMeCSZ" target="_blank" rel="noopener noreferrer" aria-label="Follow @CallMeCSZ on X">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      Follow
+    </a>
+  </footer>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlgTitle"><div class="dlg" id="dlgBody"></div></dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const PAGE = 36;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = n => Number(n).toLocaleString("en-US", { maximumFractionDigits: 0 });
+const short = n => n >= 1e6 ? "$" + (+(n / 1e6).toFixed(1)) + "M" : n >= 1e3 ? "$" + Math.round(n / 1e3) + "K" : "$" + fmt(n);
+const fmtDate = d => d ? new Date(d + "T00:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : "—";
+const tierColor = v => v >= 1e6 ? "var(--crit)" : v >= 1e5 ? "var(--warn)" : "var(--accent)";
+const SEV_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
+
+let ALL = [], NOW = Date.now(), TOP = 1;
+const state = { platform: "All", noKyc: false, noFee: false, feat: false, shown: PAGE, view: "grid" };
+try { state.view = localStorage.getItem("bb-view") || "grid"; } catch (e) {}
+
+function daysAgo(d) { return Math.max(0, Math.round((NOW - new Date(d + "T00:00:00Z")) / 864e5)); }
+function fresh(p) {
+  if (!p.upd) return `<span class="fresh f-none">Live since ${fmtDate(p.since)}</span>`;
+  const n = daysAgo(p.upd);
+  const label = n === 0 ? "Updated today" : n === 1 ? "Updated yesterday" : n < 60 ? `Updated ${n}d ago` : `Updated ${fmtDate(p.upd)}`;
+  return `<span class="fresh ${n <= 14 ? "f-new" : n <= 90 ? "f-recent" : "f-stale"}">${label}</span>`;
+}
+function reqTags(p) {
+  const t = [];
+  if (p.poc) t.push(`<span class="tag req">PoC</span>`);
+  if (p.kyc) t.push(`<span class="tag req">KYC</span>`);
+  if (p.fee) t.push(`<span class="tag req">$${fmt(p.fee)} ${p.p === "Sherlock" ? "stake" : "fee"}</span>`);
+  return t.join("");
+}
+
+function filtered() {
+  const q = $("#q").value.trim().toLowerCase();
+  const min = +$("#minMax").value;
+  const list = ALL.filter(p =>
+    (state.platform === "All" || p.p === state.platform) &&
+    (!state.noKyc || !p.kyc) &&
+    (!state.noFee || !p.fee) &&
+    (!state.feat || p.featured) &&
+    p.max >= min &&
+    (!q || p._s.includes(q))
+  );
+  const s = $("#sort").value;
+  if (s === "max") list.sort((a, b) => b.max - a.max || a.name.localeCompare(b.name));
+  if (s === "new") list.sort((a, b) => (b.since || "").localeCompare(a.since || ""));
+  if (s === "updated") list.sort((a, b) => (b.upd || b.since || "").localeCompare(a.upd || a.since || ""));
+  if (s === "name") list.sort((a, b) => a.name.localeCompare(b.name));
+  return list;
+}
+
+function renderChips() {
+  const counts = {};
+  ALL.forEach(p => counts[p.p] = (counts[p.p] || 0) + 1);
+  const list = [["All", ALL.length], ...Object.entries(counts).sort((a, b) => b[1] - a[1])];
+  $("#platChips").innerHTML = list.map(([pl, n]) =>
+    `<button class="chip" type="button" aria-pressed="${pl === state.platform}" data-pl="${esc(pl)}">${esc(pl)}<span class="n">${n}</span></button>`).join("");
+  $("#fNoKyc").setAttribute("aria-pressed", state.noKyc);
+  $("#fNoFee").setAttribute("aria-pressed", state.noFee);
+  $("#fFeat").setAttribute("aria-pressed", state.feat);
+}
+
+function card(p) {
+  const tags = (p.tags || []).slice(0, 3).map(t => `<span class="tag">${esc(t)}</span>`).join("");
+  return `<button class="card" type="button" data-k="${esc(p._k)}" style="--tier:${tierColor(p.max)}" aria-label="View details for ${esc(p.name)}">
+    <div class="row"><span><span class="plat">${esc(p.p)}</span>${p.featured ? '<span class="star">★ Pick</span>' : ""}</span>${fresh(p)}</div>
+    <div><h3>${esc(p.name)}</h3>${p.org && p.org !== p.name ? `<div class="org">${esc(p.org)}</div>` : ""}</div>
+    <div class="max">${fmt(p.max)}<small>${esc(p.cur)}</small></div>
+    <div class="bar" title="Relative to the largest cap on this board"><i style="width:${Math.max(2, Math.sqrt(p.max / TOP) * 100)}%"></i></div>
+    <div class="tags">${reqTags(p)}${tags}</div>
+  </button>`;
+}
+
+// Explain an empty result: for each active filter, count what turning it off alone would show.
+function emptyState() {
+  const keep = { ...state }, q = $("#q").value, min = $("#minMax").value;
+  const tries = [];
+  const test = (label, undo, redo) => { undo(); const n = filtered().length; redo(); if (n) tries.push([label, n]); };
+  if (state.platform !== "All") test(`Show all platforms`, () => state.platform = "All", () => state.platform = keep.platform);
+  if (state.noKyc) test(`Turn off "No KYC"`, () => state.noKyc = false, () => state.noKyc = true);
+  if (state.noFee) test(`Turn off "No submission fee"`, () => state.noFee = false, () => state.noFee = true);
+  if (state.feat) test(`Turn off "Picks only"`, () => state.feat = false, () => state.feat = true);
+  if (+min) test(`Any reward`, () => $("#minMax").value = "0", () => $("#minMax").value = min);
+  if (q) test(`Clear the search`, () => $("#q").value = "", () => $("#q").value = q);
+  const fixes = tries.map(([l, n], i) => `<button class="btn" type="button" data-fix="${i}">${esc(l)} · ${n} program${n > 1 ? "s" : ""}</button>`).join("");
+  emptyState.fixes = tries.map(([l]) => l);
+  return `<div class="empty"><p style="margin:0 0 14px">No program matches all of these filters at once.</p>
+    ${fixes ? `<div class="actions" style="justify-content:center">${fixes}</div>` : `<button class="btn" type="button" data-fix="all">Clear all filters</button>`}</div>`;
+}
+
+function applyFix(label) {
+  if (label === "Show all platforms") state.platform = "All";
+  else if (label.includes("No KYC")) state.noKyc = false;
+  else if (label.includes("submission fee")) state.noFee = false;
+  else if (label.includes("Picks only")) state.feat = false;
+  else if (label === "Any reward") $("#minMax").value = "0";
+  else if (label === "Clear the search") $("#q").value = "";
+  else return $("#reset").click();
+  rerender();
+}
+
+function render() {
+  const list = filtered();
+  const page = list.slice(0, state.shown);
+  $("#count").textContent = `Showing ${page.length} of ${list.length} matching programs (${ALL.length} live in total)`;
+  $("#vGrid").setAttribute("aria-pressed", state.view === "grid");
+  $("#vTable").setAttribute("aria-pressed", state.view === "table");
+  if (!list.length) {
+    $("#results").innerHTML = emptyState();
+  } else if (state.view === "grid") {
+    $("#results").innerHTML = `<div class="grid">${page.map(card).join("")}</div>`;
+  } else {
+    $("#results").innerHTML = `<div class="tablewrap"><table>
+      <thead><tr><th>Program</th><th>Platform</th><th>Max reward</th><th>Requirements</th><th>Tags</th><th>Updated</th></tr></thead>
+      <tbody>${page.map(p => `<tr data-k="${esc(p._k)}" tabindex="0">
+        <td><b>${esc(p.name)}</b>${p.featured ? ' <span class="star">★</span>' : ""}</td>
+        <td><span class="plat">${esc(p.p)}</span></td>
+        <td class="num">${fmt(p.max)} ${esc(p.cur)}</td>
+        <td>${[p.poc && "PoC", p.kyc && "KYC", p.fee && ("$" + fmt(p.fee) + (p.p === "Sherlock" ? " stake" : " fee"))].filter(Boolean).join(" · ") || "—"}</td>
+        <td>${esc((p.tags || []).slice(0, 2).join(", ")) || "—"}</td>
+        <td>${fmtDate(p.upd || p.since)}</td></tr>`).join("")}</tbody></table></div>`;
+  }
+  const left = list.length - page.length;
+  $("#more").innerHTML = left > 0 ? `<button class="btn" type="button" id="moreBtn">Show ${Math.min(left, PAGE)} more · ${left} left</button>` : "";
+}
+
+function openDialog(k) {
+  const p = ALL.find(x => x._k === k);
+  if (!p) return;
+  const tiers = [...(p.tiers || [])].sort((a, b) => (SEV_ORDER[a[0]] ?? 9) - (SEV_ORDER[b[0]] ?? 9));
+  const yn = v => v === true ? "Required" : v === false ? "Not required" : "See program";
+  $("#dlgBody").innerHTML = `
+    <div class="row"><span><span class="plat">${esc(p.p)}</span>${p.featured ? '<span class="star">★ Curator pick</span>' : ""}</span>${fresh(p)}</div>
+    <div><h3 id="dlgTitle">${esc(p.name)}</h3>${p.org && p.org !== p.name ? `<div class="org">${esc(p.org)}</div>` : ""}</div>
+    <div class="max">${fmt(p.max)}<small>${esc(p.cur)} max</small></div>
+    <div class="facts">
+      <div class="fact"><span>Live since</span><b>${fmtDate(p.since)}</b></div>
+      <div class="fact"><span>Last updated</span><b>${p.upd ? fmtDate(p.upd) : "Not published"}</b></div>
+      <div class="fact"><span>KYC</span><b>${yn(p.kyc)}</b></div>
+      <div class="fact"><span>PoC</span><b>${yn(p.poc)}</b></div>
+      <div class="fact"><span>${p.p === "Sherlock" ? "Stake per report" : "Submission fee"}</span><b>${p.fee ? "$" + fmt(p.fee) : "None"}</b></div>
+      ${p.findings ? `<div class="fact"><span>Findings submitted</span><b>${fmt(p.findings)}</b></div>` : ""}
+    </div>
+    ${p.desc ? `<div class="meta">${esc(p.desc)}</div>` : ""}
+    ${tiers.length ? `<table>
+      <thead><tr><th>Severity</th><th>Asset</th><th>Reward</th></tr></thead>
+      <tbody>${tiers.map(([s, a, r]) => `<tr><td><span class="sev ${esc(s)}">${esc(s === "other" ? "Range" : s)}</span></td><td>${esc(a) || "—"}</td><td>${esc(r)}</td></tr>`).join("")}</tbody>
+    </table>` : ""}
+    ${p.tags && p.tags.length ? `<div class="tags">${p.tags.map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div>` : ""}
+    <div class="actions">
+      <a class="btn primary" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">Open on ${esc(p.p)} ↗</a>
+      ${p.extra ? `<a class="btn" href="${esc(p.extra[1])}" target="_blank" rel="noopener noreferrer">${esc(p.extra[0])} ↗</a>` : ""}
+      <button class="btn" type="button" data-copy="${esc(p.url)}">Copy link</button>
+      <button class="btn ghost" type="button" data-close>Close</button>
+    </div>`;
+  $("#dlg").showModal();
+}
+
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 1600); }
+function rerender(resetPage = true) { if (resetPage) state.shown = PAGE; renderChips(); render(); }
+
+async function init() {
+  try {
+    const res = await fetch("programs.json", { cache: "no-cache" });
+    const data = await res.json();
+    NOW = Date.parse(data.generatedAt) || Date.now();
+    ALL = data.programs.map(p => ({
+      ...p, max: +p.max || 0,
+      _k: p.p + ":" + p.id,
+      _s: [p.name, p.org, p.p, ...(p.tags || [])].join(" ").toLowerCase()
+    }));
+    TOP = Math.max(...ALL.map(p => p.max), 1);
+    const when = new Date(data.generatedAt);
+    $("#snap").textContent = when.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC" }) + " UTC";
+    $("#kPrograms").textContent = fmt(ALL.length);
+    $("#kPlatforms").textContent = new Set(ALL.map(p => p.p)).size;
+    $("#kMillion").textContent = ALL.filter(p => p.max >= 1e6).length;
+    $("#kTop").textContent = short(TOP);
+    $("#srcs").innerHTML = Object.entries(data.sources).map(([k, v]) => `<span>${esc(k)}: ${typeof v === "number" ? v + " programs" : "unavailable"}</span>`).join("") + `<span>at ${esc(data.generatedAt.replace("T", " ").replace("Z", " UTC"))}</span>`;
+    const picks = ALL.filter(p => p.featured).sort((a, b) => b.max - a.max);
+    $("#picks").innerHTML = picks.map(p => `<button class="pick" type="button" data-k="${esc(p._k)}"><small>${esc(p.p)}</small><b>${esc(p.name)}</b><span class="amt">${short(p.max)} <small>${esc(p.cur)}</small></span></button>`).join("");
+    rerender();
+  } catch (e) {
+    $("#count").textContent = "Couldn't load program data. Refresh the page to try again.";
+  }
+}
+
+$("#platChips").addEventListener("click", e => { const b = e.target.closest("[data-pl]"); if (b) { state.platform = b.dataset.pl; rerender(); } });
+$("#fNoKyc").addEventListener("click", () => { state.noKyc = !state.noKyc; rerender(); });
+$("#fNoFee").addEventListener("click", () => { state.noFee = !state.noFee; rerender(); });
+$("#fFeat").addEventListener("click", () => { state.feat = !state.feat; rerender(); });
+$("#reset").addEventListener("click", () => {
+  Object.assign(state, { platform: "All", noKyc: false, noFee: false, feat: false });
+  $("#q").value = ""; $("#minMax").value = "0"; $("#sort").value = "max"; rerender();
+});
+$("#q").addEventListener("input", () => rerender());
+$("#minMax").addEventListener("change", () => rerender());
+$("#sort").addEventListener("change", () => rerender());
+function setView(v) { state.view = v; try { localStorage.setItem("bb-view", v); } catch (e) {} render(); }
+$("#vGrid").addEventListener("click", () => setView("grid"));
+$("#vTable").addEventListener("click", () => setView("table"));
+$("#results").addEventListener("click", e => { const f = e.target.closest("[data-fix]"); if (f) applyFix(f.dataset.fix === "all" ? "all" : emptyState.fixes[+f.dataset.fix]); });
+$("#more").addEventListener("click", e => { if (e.target.id === "moreBtn") { state.shown += PAGE; render(); } });
+document.addEventListener("click", e => { const c = e.target.closest("#results [data-k], #picks [data-k]"); if (c) openDialog(c.dataset.k); });
+$("#results").addEventListener("keydown", e => { if (e.key === "Enter") { const c = e.target.closest("tr[data-k]"); if (c) openDialog(c.dataset.k); } });
+$("#dlg").addEventListener("click", async e => {
+  if (e.target === $("#dlg") || e.target.closest("[data-close]")) return $("#dlg").close();
+  const c = e.target.closest("[data-copy]");
+  if (c) { try { await navigator.clipboard.writeText(c.dataset.copy); toast("Link copied"); } catch (err) { toast("Copy blocked. Use the Open button instead."); } }
+});
+init();
+</script>
+</body>
+</html>
