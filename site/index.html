@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Live Bug Bounty Board</title>
 <meta name="description" content="Every live Web3 bug bounty from Immunefi, Cantina, Sherlock and HackenProof in one searchable board, with reward caps, requirements and links to the original scope.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#9a5b00">
+<meta property="og:title" content="Live Bug Bounty Board">
+<meta property="og:description" content="Every live Web3 bug bounty from Immunefi, Cantina, Sherlock and HackenProof in one searchable board.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:creator" content="@CallMeCSZ">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
@@ -41,7 +49,7 @@ a { color: var(--accent); }
 nav.top { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
 .navin { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 60px; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; text-decoration: none; color: var(--text); }
-.brand .mark { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; background: var(--accent); color: var(--bg); font-family: var(--mono); font-size: 13px; font-weight: 500; }
+.brand .mark { width: 28px; height: 28px; border-radius: 7px; display: block; }
 .navlinks { display: flex; align-items: center; gap: 20px; font-size: 14px; }
 .navlinks a.lnk { color: var(--muted); text-decoration: none; }
 .navlinks a.lnk:hover { color: var(--text); }
@@ -161,7 +169,7 @@ footer p { margin: 0; max-width: 70ch; }
 
 <nav class="top">
   <div class="wrap navin">
-    <a class="brand" href="#top"><span class="mark">BB</span>Bounty Board</a>
+    <a class="brand" href="#top"><img class="mark" src="favicon.svg" alt="" width="28" height="28">Bounty Board</a>
     <div class="navlinks">
       <a class="lnk" href="#programs">Programs</a>
       <a class="lnk" href="#method">Methodology</a>
